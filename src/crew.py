@@ -12,7 +12,13 @@ from crewai import Crew, Process, Task
 from src.agents import build_market_researcher, build_orchestrator, build_sentiment_analyst
 
 
-def build_crew(product_name: str, reviews_path: str) -> Crew:
+def build_crew(product_name: str, reviews_path: str, with_hitl: bool = True) -> Crew:
+    """Build the 3-agent Crew.
+
+    `with_hitl=True` uses CrewAI's terminal `human_input=True` (CLI demo).
+    `with_hitl=False` skips it — the Streamlit UI handles approval externally
+    via approve/edit/reject buttons.
+    """
     analyst = build_sentiment_analyst()
     researcher = build_market_researcher()
     orchestrator = build_orchestrator()
@@ -61,7 +67,7 @@ def build_crew(product_name: str, reviews_path: str) -> Crew:
         expected_output="A markdown brief following the structure above.",
         agent=orchestrator,
         context=[analyze_reviews, scout_competitors],
-        human_input=True,  # <-- HITL checkpoint required by brief
+        human_input=with_hitl,  # CLI: prompt on stdin. UI: handled externally.
         output_file=None,
     )
 

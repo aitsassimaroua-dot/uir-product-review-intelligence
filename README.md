@@ -60,15 +60,23 @@ This downloads `amazon_polarity`, fine-tunes `distilbert-base-uncased`, saves to
 
 ### 4. Run the multi-agent system (W3)
 
+**Option A — CLI** (terminal HITL):
 ```bash
 python -m src.main --product "Wireless Earbuds X" --reviews data/processed/sample_reviews.csv
 ```
 
-The system will:
+**Option B — Streamlit UI** (recommended for the demo):
+```bash
+streamlit run streamlit_app.py
+# or: make ui
+```
+Opens at http://localhost:8501 — upload/paste reviews, run agents, approve/edit/reject the draft via buttons, download the final brief and JSON log.
+
+In both modes the system will:
 1. Load reviews → Sentiment Analyst classifies each one
 2. Market Researcher fetches competitor context
 3. Orchestrator drafts a market brief
-4. **HITL prompt**: you review the draft → approve / edit / reject
+4. **HITL checkpoint**: you review the draft → approve / edit / reject
 5. Final brief written to `outputs/market_brief_<timestamp>.md`
 
 Every agent action is logged as JSON to `logs/agent_actions_<timestamp>.jsonl`.

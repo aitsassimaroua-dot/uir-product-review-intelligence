@@ -129,21 +129,11 @@ Cites every URL. Says "no results" rather than inventing a competitor.
 
 **Why no tools?** Forces it to be an editor, not a researcher. Stops the "godlike orchestrator" anti-pattern.
 
-**HITL:** `Task(human_input=True)` in `src/crew.py`.
+**HITL — two surfaces, same logic:**
+- **CLI** — `Task(human_input=True)`, terminal stdin
+- **Streamlit UI** — Approve / Save edits / Reject buttons over the same draft
 
-```text
-═══════════════════════════════════════
-HUMAN INPUT REQUIRED — review the draft below.
-Type 'approve' / paste an edit / 'reject'.
-═══════════════════════════════════════
-
-# Market Brief — Wireless Earbuds X
-...
-
-> approve
-```
-
-Two lines of code, full human control of the final artefact.
+Both write the same `outputs/market_brief_<ts>.md` and the same JSONL log entries.
 
 ---
 
@@ -152,16 +142,16 @@ Two lines of code, full human control of the final artefact.
 *(or recorded fallback at `docs/demo_video.mp4`)*
 
 ```bash
-$ make demo
+$ make ui          # Streamlit UI (recommended)
+# or: make demo   # CLI version
 ```
 
 What you'll see:
-1. Sentiment Analyst calls BERT 10 times (one per review).
-2. Market Researcher runs 1–3 DDG searches.
-3. Orchestrator drafts the brief.
-4. **HITL prompt** — I approve.
-5. `outputs/market_brief_*.md` written.
-6. JSONL log validated with `jq`.
+1. Pick the sample CSV (10 reviews) in the sidebar.
+2. Click **Run analysis** — Sentiment Analyst calls BERT 10 times, Market Researcher runs DDG searches, Orchestrator drafts.
+3. The draft appears in a textarea — I review it, edit the headline, click **Save edits**.
+4. Final brief renders. JSONL log expander is open below.
+5. **Download brief** + **Download JSON log** buttons confirm the artefacts.
 
 ---
 

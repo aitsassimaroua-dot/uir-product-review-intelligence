@@ -51,15 +51,22 @@ python -m src.model.train --epochs 2 --subset 20000
 Numbers and figures are in `outputs/`. Skip unless you want to re-evaluate.
 
 ### 4. Run the multi-agent demo (the only thing that requires your Gemini key)
+
+**Option A — Streamlit UI (recommended for the defense demo)**:
 ```bash
 source .venv/bin/activate
+streamlit run streamlit_app.py
+# or: make ui
+```
+Opens at http://localhost:8501. Sidebar lets you pick the sample CSV, upload your own, or paste reviews manually. Click "Run analysis" → the agents work → a draft appears → you approve/edit/reject via buttons → final brief is shown + downloadable.
+
+**Option B — CLI (same logic, terminal HITL)**:
+```bash
 python -m src.main --product "Wireless Earbuds X" --reviews data/processed/sample_reviews.csv
 ```
-You'll see the JSON log fill up, agents take turns, and a HITL prompt before the brief is finalized. **Type `approve`** to accept the draft.
+Type `approve` at the HITL prompt.
 
-The brief is written to `outputs/market_brief_<timestamp>.md`.
-
-Run this **at least once** before the defense — you need a real `outputs/market_brief_*.md` to paste into your report's §4.2.
+Run **at least once** before the defense — you need a real `outputs/market_brief_*.md` to paste into your report's §4.2.
 
 ### 5. Fill in the remaining placeholders in `docs/report.md`
 The numbers are already filled in. Only these are still placeholders:

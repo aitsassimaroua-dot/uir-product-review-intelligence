@@ -287,12 +287,14 @@ biggest measurable gap.
 
 ### 4.3 Human-in-the-loop
 
-The HITL is implemented via `Task(human_input=True)` on the orchestrator's `write_brief` task (`src/crew.py`). When CrewAI reaches that task it emits the draft and blocks on stdin. The user can:
-- Type **approve** → the current draft becomes the final brief.
-- Paste an **edit** → that text becomes the final brief (verbatim).
-- Type **reject** → CrewAI regenerates with the user's note as feedback.
+The HITL has **two surfaces**, sharing the same logic:
 
-We hard-cap retries at 2 in the orchestrator's `max_iter=8` — if the user rejects three times in a row, the run aborts and prompts them to re-invoke. This protects against runaway loops if the user is unhappy with every draft.
+- **CLI mode** (`python -m src.main`): `Task(human_input=True)` makes CrewAI emit the draft and block on stdin. The user types `approve`, pastes an edit, or types a reject reason.
+- **Streamlit UI mode** (`streamlit run streamlit_app.py`): the orchestrator's task is built with `human_input=False`, the draft is rendered in a textarea, and three buttons handle approval — **Approve as-is**, **Save edits**, **Reject & regenerate**.
+
+Both surfaces produce the same `outputs/market_brief_<timestamp>.md` file and the same JSONL log entries; the choice between them is a matter of demo ergonomics.
+
+We hard-cap orchestrator retries at `max_iter=8` so a user who keeps rejecting cannot cause an infinite loop — the run aborts cleanly and prompts them to re-invoke.
 
 ### 4.4 Code quality
 

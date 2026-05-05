@@ -1,4 +1,4 @@
-.PHONY: install train eval demo test clean
+.PHONY: install train eval demo ui test clean
 
 install:
 	python -m pip install --upgrade pip
@@ -12,6 +12,9 @@ eval:
 
 demo:
 	python -m src.main --product "Wireless Earbuds X" --reviews data/processed/sample_reviews.csv
+
+ui:
+	streamlit run streamlit_app.py
 
 test:
 	pytest -q
