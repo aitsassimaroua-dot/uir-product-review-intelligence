@@ -18,7 +18,7 @@ A product manager who wants to understand how their product is being received an
 
 **Product Review Intelligence** is a multi-agent AI system that automates this workflow. Three specialized agents collaborate: a **Sentiment Analyst** that owns a fine-tuned DistilBERT classifier, a **Market Researcher** that scouts competitors via public web search, and a **Report Orchestrator** that synthesizes their outputs into a one-page market brief — with a human checkpoint before the brief is finalized.
 
-The DistilBERT classifier was fine-tuned on a stratified subset of `amazon_polarity` and reaches **91.1% accuracy / 0.911 weighted F1** on 5,000 held-out test reviews (see §3.4 for the full breakdown). End-to-end, the system processes a 10-review CSV and produces an approved market brief in approximately 90 seconds, with every agent action logged as structured JSON.
+The DistilBERT classifier was fine-tuned on a 18,000-example stratified subset of `amazon_polarity` and reaches **94.5% accuracy / 0.945 weighted F1** on 5,000 held-out test reviews (see §3.4 for the full breakdown). End-to-end, the system processes a 10-review CSV and produces an approved market brief in approximately 90 seconds, with every agent action logged as structured JSON.
 
 The system meets every minimum requirement of the brief: 2 specialists + 1 orchestrator, a self-trained DL model used as a functional tool, two tools with clear I/O schemas, a human-in-the-loop checkpoint, error handling, JSONL logging with timestamps, and a reproducible setup.
 
@@ -151,12 +151,11 @@ We use **`amazon_polarity`** (3.6M train / 400k test) from Hugging Face Datasets
 
 | Split | Size | Class balance |
 |---|---|---|
-| train (subset) | 1,800 (smoke run) — 18,000 (full run) | 50% pos / 50% neg |
-| val | 200 (smoke) — 2,000 (full) | stratified from train |
+| train | 18,000 | 50% pos / 50% neg |
+| val | 2,000 | stratified from train |
 | test | 5,000 | stratified from full test split |
 
-The numbers reported below are from a 2,000-example smoke run (1 epoch, ~80 s on Apple MPS).
-A larger 20,000-example × 2-epoch run is committed in `train.py` defaults — re-run for marginal gains (~+2 points expected).
+A smaller smoke run (1,800 examples × 1 epoch, ~80 s wall clock) reached 91.1% accuracy as a sanity check. The numbers below come from the **full run** (18,000 train × 2 epochs).
 
 **Subsetting** is stratified per class (`shuffle(seed=42).select`), so the class balance matches the source. Train/val are carved from the train split; the test set is held out from training.
 
@@ -185,9 +184,9 @@ We fine-tune **`distilbert-base-uncased`** (66M parameters, 6-layer transformer)
 | Weight decay | 0.01 | Trainer default |
 | Eval strategy | per epoch | `f1_weighted` is the selection metric |
 
-Trained on Apple Silicon MPS (M-series Mac) — single device. Smoke run (1,800 examples, 1 epoch): **~46 seconds train + 33 seconds eval = ~80 seconds wall clock total**. Reproducibility is anchored by `seed=42` set in `train.py:set_seed` for `random`, `numpy`, and `torch`.
+Trained on Apple Silicon MPS (M-series Mac) — single device. Full run (18,000 examples × 2 epochs): **~14 minutes train + ~30 seconds eval ≈ 15 minutes wall clock total**. Reproducibility is anchored by `seed=42` set in `train.py:set_seed` for `random`, `numpy`, and `torch`.
 
-Train throughput on MPS measured at ~39 samples/sec (2.45 steps/sec at batch size 16). Inference at eval time: ~151 samples/sec batched.
+Train throughput on MPS measured at ~3.0 steps/sec at batch size 16 (~48 samples/sec). Inference at eval time: ~165 samples/sec batched.
 
 ### 3.4 Evaluation
 
@@ -195,21 +194,21 @@ On the 5,000-example held-out test set (`outputs/eval_metrics.json`):
 
 | Metric | Value |
 |---|---|
-| **Accuracy** | **0.911** |
-| **Weighted F1** | **0.911** |
-| Precision (negative) | 0.924 |
-| Recall (negative)    | 0.895 |
-| Precision (positive) | 0.898 |
-| Recall (positive)    | 0.926 |
+| **Accuracy** | **0.9452** |
+| **Weighted F1** | **0.9452** |
+| Precision (negative) | 0.942 |
+| Recall (negative)    | 0.949 |
+| Precision (positive) | 0.949 |
+| Recall (positive)    | 0.941 |
 
 Confusion matrix (counts):
 
 |              | pred neg | pred pos |
 |---           |---       |---       |
-| **true neg** | 2237     | 263      |
-| **true pos** | 184      | 2316     |
+| **true neg** | 2373     | 127      |
+| **true pos** | 147      | 2353     |
 
-Errors are roughly balanced across classes (263 false-positives vs 184 false-negatives) — neither class is consistently over-predicted, which is a sign the model is calibrated rather than collapsing onto the majority class. The figure version (`outputs/eval_confusion_matrix.png`) is reproduced in the appendix.
+Errors are very balanced across classes (127 false-positives vs 147 false-negatives) — neither class is consistently over-predicted, which is a sign the model is calibrated rather than collapsing onto the majority class. The figure version (`outputs/eval_confusion_matrix.png`) is reproduced in the appendix.
 
 ### 3.5 Meaningful integration
 
@@ -459,12 +458,12 @@ selection:     load_best_model_at_end on f1_weighted
 ```
               precision    recall  f1-score   support
 
-    negative      0.924     0.895     0.909      2500
-    positive      0.898     0.926     0.912      2500
+    negative      0.942     0.949     0.945      2500
+    positive      0.949     0.941     0.945      2500
 
-    accuracy                          0.911      5000
-   macro avg      0.911     0.911     0.911      5000
-weighted avg      0.911     0.911     0.911      5000
+    accuracy                          0.945      5000
+   macro avg      0.945     0.945     0.945      5000
+weighted avg      0.945     0.945     0.945      5000
 ```
 
 ## Appendix C — Selected JSONL log excerpt
@@ -472,10 +471,10 @@ weighted avg      0.911     0.911     0.911      5000
 Sample lines from a real run's `logs/agent_actions_<run_id>.jsonl`:
 
 ```json
-{"ts":"2026-05-05T14:17:00.731Z","level":"INFO","logger":"model.dataset","msg":"dataset.ready","train":1800,"val":200,"test":5000,"labels":2}
-{"ts":"2026-05-05T14:18:21.202Z","level":"INFO","logger":"model.train","msg":"train.test_metrics","metrics":{"test_loss":0.2545,"test_accuracy":0.9106,"test_f1_weighted":0.9106,"test_runtime":33.05}}
-{"ts":"2026-05-05T14:18:21.505Z","level":"INFO","logger":"model.train","msg":"train.saved","path":"/Users/.../models/sentiment_bert"}
-{"ts":"2026-05-05T14:20:03.789Z","level":"INFO","logger":"model.eval","msg":"eval.metrics","accuracy":0.9106,"f1_weighted":0.9106}
+{"ts":"2026-05-05T14:25:00.000Z","level":"INFO","logger":"model.dataset","msg":"dataset.ready","train":18000,"val":2000,"test":5000,"labels":2}
+{"ts":"2026-05-05T14:34:14.146Z","level":"INFO","logger":"model.train","msg":"train.test_metrics","metrics":{"test_loss":0.2003,"test_accuracy":0.9452,"test_f1_weighted":0.9452,"test_runtime":30.30}}
+{"ts":"2026-05-05T14:34:14.280Z","level":"INFO","logger":"model.train","msg":"train.saved","path":"/Users/.../models/sentiment_bert"}
+{"ts":"2026-05-05T14:47:13.151Z","level":"INFO","logger":"model.eval","msg":"eval.metrics","accuracy":0.9452,"f1_weighted":0.9452}
 ```
 
 ## Appendix D — References
