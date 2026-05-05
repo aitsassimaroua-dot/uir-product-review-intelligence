@@ -4,24 +4,26 @@
 
 ## ✅ What's already done (in this repo)
 
-- [x] **Code complete** — 27 Python files, ~1200 lines. Every Python file parses cleanly.
+- [x] **Code complete** — 27 Python files, ~1200 lines. Every file parses, all 20 unit tests pass (`pytest -q`).
 - [x] **3 agents** built and wired: Sentiment Analyst, Market Researcher, Report Orchestrator (`src/agents/`).
 - [x] **3 tools** with Pydantic I/O schemas: `BertSentimentTool`, `ReviewLoaderTool`, `CompetitorSearchTool` (`src/tools/`).
-- [x] **BERT pipeline** ready to train: `src/model/{dataset,train,evaluate,inference}.py`.
+- [x] **BERT trained** ✅ — `models/sentiment_bert/`, **94.52% accuracy / 0.9452 F1** on 5,000 held-out test reviews.
+- [x] **Evaluation done** — `outputs/eval_metrics.json`, `eval_classification_report.txt`, `eval_confusion_matrix.png`.
 - [x] **Multi-agent orchestration** with HITL: `src/crew.py`, `src/main.py`.
 - [x] **JSON structured logging** — every agent action logged to `logs/agent_actions_<run_id>.jsonl`.
-- [x] **Test suite** (`tests/`) — 5 files covering happy paths, error paths, edge cases.
+- [x] **Test suite** (`tests/`) — 5 files, **20 tests passing**, edge cases included.
 - [x] **All documentation**:
   - `docs/architecture.md` — architecture + diagram + rationale (rubric: System Design 15%)
   - `docs/dataset_choice.md` — why amazon_polarity, preprocessing, honest caveats
   - `docs/timeline.md` — W1→W4 plan
-  - `docs/report.md` — **full 8–12 page report**, ready to render to PDF
-  - `docs/slides.md` — **full 12-slide deck**, Marp-ready
+  - `docs/report.md` — **full 8–12 page report with real numbers filled in**, ready to render to PDF
+  - `docs/slides.md` — **full 12-slide deck with real metrics**, Marp-ready
   - `docs/demo_script.md` — beat-sheet for the 3-5 min demo video
   - `docs/slides_outline.md` — Q&A prep for the defense
-- [x] **Dev environment** — `.venv/` with all dependencies installed.
-- [x] **Sample reviews CSV** for the demo (`data/processed/sample_reviews.csv`).
+- [x] **Dev environment** — `.venv/` with all dependencies installed (crewai 1.14, torch 2.11, transformers 5.7, etc.).
+- [x] **Sample reviews CSV** for the demo (`data/processed/sample_reviews.csv`, 10 reviews mixed sentiment).
 - [x] **Configuration** — `.env.example`, `requirements.txt`, `Makefile`, `.gitignore`.
+- [x] **Git** — local repo initialized, 4 commits on `main`. Identity set to `elazouzi.khalil.ke@gmail.com`.
 
 ## ⚠️ What only YOU can do
 
@@ -36,41 +38,34 @@
 
 Without this, the agents can't call any LLM.
 
-### 2. Train the BERT model (~30 min on M-series Mac)
+### 2. ~~Train the BERT model~~ — already done ✅
+The model is at `models/sentiment_bert/` (~268 MB). Skip this step unless you want to retrain.
+
+If you do want to retrain (e.g. with different hyperparameters):
 ```bash
 source .venv/bin/activate
-python -m src.model.train
+python -m src.model.train --epochs 2 --subset 20000
 ```
-This downloads `amazon_polarity` (~250 MB), trains for 2 epochs on a 50k subset, saves the model to `models/sentiment_bert/`, and writes `test_metrics.json`.
 
-For a quick smoke test (~3 min): `python -m src.model.train --epochs 1 --subset 5000`.
+### 3. ~~Run evaluation~~ — already done ✅
+Numbers and figures are in `outputs/`. Skip unless you want to re-evaluate.
 
-### 3. Run evaluation
+### 4. Run the multi-agent demo (the only thing that requires your Gemini key)
 ```bash
-python -m src.model.evaluate
-```
-Produces:
-- `outputs/eval_metrics.json` — accuracy, F1, confusion matrix as numbers
-- `outputs/eval_classification_report.txt` — per-class precision/recall/F1
-- `outputs/eval_confusion_matrix.png` — figure for the report
-
-### 4. Run the multi-agent demo
-```bash
+source .venv/bin/activate
 python -m src.main --product "Wireless Earbuds X" --reviews data/processed/sample_reviews.csv
 ```
 You'll see the JSON log fill up, agents take turns, and a HITL prompt before the brief is finalized. **Type `approve`** to accept the draft.
 
 The brief is written to `outputs/market_brief_<timestamp>.md`.
 
-### 5. Fill in the placeholders in `docs/report.md`
-After training + eval, edit `docs/report.md` and replace these markers with real values:
-- `[ACC]` → accuracy from `outputs/eval_metrics.json`
-- `[F1]` → weighted F1
-- `[P_neg]`, `[R_neg]`, `[P_pos]`, `[R_pos]` → from the classification report
-- `[T]` → minutes the training took (look at the wall clock)
-- `[Member A/B/C]` → real names + UIR emails
-- Appendix B/C — paste actual file contents
-- Demo brief sample (§4.2) — replace with a real generated brief
+Run this **at least once** before the defense — you need a real `outputs/market_brief_*.md` to paste into your report's §4.2.
+
+### 5. Fill in the remaining placeholders in `docs/report.md`
+The numbers are already filled in. Only these are still placeholders:
+- `[Member A]` / `[Member B]` / `[Member C]` → your team's real names + UIR emails (cover, §8 Team Contributions)
+- §4.2 sample brief — replace the example with whatever your real demo produces
+- Cover-page repo + demo-video URLs (last lines of the cover and Page 1)
 
 ### 6. Convert `docs/report.md` to PDF
 Easiest path:
@@ -117,19 +112,20 @@ Update `docs/report.md` and `docs/slides.md` with the real repo URL.
 
 ## Estimated time to finish (your end)
 
-| Step | Time |
-|---|---|
-| Gemini key setup | 5 min |
-| BERT training (full) | ~30 min on Mac MPS, runs unattended |
-| Evaluation | 2 min |
-| Demo run + brief generation | 3 min |
-| Fill placeholders in report | 30 min |
-| Render report to PDF | 10 min |
-| Render slides to PDF | 5 min |
-| Record demo video (3 takes) | 30 min |
-| Push to GitHub | 5 min |
-| Defense rehearsal | 60 min |
-| **Total** | **~2.5 hours of your active time** + 30 min training waiting |
+| Step | Time | Status |
+|---|---|---|
+| ~~BERT training~~ | ~~30 min~~ | ✅ done — 94.52% / 0.945 F1 |
+| ~~Evaluation~~ | ~~2 min~~ | ✅ done |
+| ~~Fill report numbers~~ | ~~30 min~~ | ✅ done |
+| Gemini key setup | 5 min | TODO |
+| Demo run + brief generation | 3 min | TODO |
+| Replace 3 names + 1 sample brief in report | 5 min | TODO |
+| Render report to PDF | 10 min | TODO |
+| Render slides to PDF | 5 min | TODO |
+| Record demo video (3 takes) | 30 min | TODO |
+| Push to GitHub | 5 min | TODO |
+| Defense rehearsal | 60 min | TODO |
+| **Total remaining** | **~2 hours of your active time** | |
 
 ## Submission checklist (per brief)
 
