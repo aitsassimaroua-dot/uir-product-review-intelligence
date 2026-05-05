@@ -128,6 +128,15 @@ def main() -> None:
     trainer.save_model(str(out_dir))
     tokenizer.save_pretrained(str(out_dir))
     (out_dir / "test_metrics.json").write_text(json.dumps(test_metrics, indent=2))
+
+    # Trainer keeps per-epoch checkpoints in _hf_trainer/ (~2 GB). We don't
+    # need them after picking the best — drop to keep the repo lean.
+    import shutil
+    trainer_cache = out_dir / "_hf_trainer"
+    if trainer_cache.exists():
+        shutil.rmtree(trainer_cache)
+        log.info("train.cleanup", extra={"removed": str(trainer_cache)})
+
     log.info("train.saved", extra={"path": str(out_dir)})
 
 
