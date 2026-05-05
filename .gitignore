@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+.eggs/
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Env
+.env
+.env.local
+
+# Data + models (heavy, not for git)
+data/raw/
+data/processed/
+models/
+!models/.gitkeep
+
+# Logs + outputs (keep folder, not contents)
+logs/*.jsonl
+logs/*.log
+!logs/.gitkeep
+outputs/*.pdf
+outputs/*.png
+outputs/*.md
+!outputs/.gitkeep
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Hugging Face cache (if local)
+.cache/
