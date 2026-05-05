@@ -91,11 +91,12 @@ The Analyst always calls the model — it never labels a review on its own.
 | | |
 |---|---|
 | Architecture | `distilbert-base-uncased` (66M params, 6 layers) |
-| Dataset | `amazon_polarity`, 50k stratified subset |
-| Training | 2 epochs, lr=2e-5, batch=16, seed=42, MPS |
-| **Test accuracy** | **[ACC]** |
-| **Test weighted F1** | **[F1]** |
-| Inference | ~28 ms / review on M-series MPS |
+| Dataset | `amazon_polarity` stratified subset |
+| Training | 1 epoch on 1,800 examples, lr=2e-5, batch=16, seed=42, MPS |
+| Wall clock | ~80 s total (46 s train + 33 s eval) |
+| **Test accuracy** | **0.911** |
+| **Test weighted F1** | **0.911** |
+| Inference | ~151 samples/s batched on M-series MPS |
 
 ![h:280px confusion matrix](../outputs/eval_confusion_matrix.png)
 

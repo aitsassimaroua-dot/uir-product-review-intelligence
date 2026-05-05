@@ -23,14 +23,18 @@ data/processed/
 models/
 !models/.gitkeep
 
-# Logs + outputs (keep folder, not contents)
+# Logs (keep folder, not contents)
 logs/*.jsonl
 logs/*.log
 !logs/.gitkeep
-outputs/*.pdf
-outputs/*.png
-outputs/*.md
+
+# Outputs: ignore generated briefs / runs, but keep eval artefacts in the repo
+outputs/market_brief_*.md
+outputs/run_*.json
 !outputs/.gitkeep
+!outputs/eval_*.png
+!outputs/eval_*.txt
+!outputs/eval_*.json
 
 # OS
 .DS_Store
