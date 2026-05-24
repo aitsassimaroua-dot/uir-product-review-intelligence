@@ -1,7 +1,7 @@
 """LLM factory — single source of truth for the model passed to each agent.
 
 CrewAI uses LiteLLM under the hood, so the model string follows LiteLLM
-routing (e.g. `gemini/gemini-1.5-flash`, `ollama/llama3.1`).
+routing (e.g. `gemini/gemini-2.0-flash`, `ollama/llama3.1`).
 """
 from __future__ import annotations
 

@@ -34,7 +34,7 @@ def _env_float(key: str, default: float) -> float:
 @dataclass(frozen=True)
 class Settings:
     # LLM
-    model: str = _env("MODEL", "gemini/gemini-1.5-flash")
+    model: str = _env("MODEL", "gemini/gemini-2.0-flash")
     gemini_api_key: str = _env("GEMINI_API_KEY", "")
     ollama_base_url: str = _env("OLLAMA_BASE_URL", "http://localhost:11434")
 

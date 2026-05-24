@@ -1,135 +1,121 @@
-# Product Review Intelligence — Multi-Agent AI System
+# Product Review Intelligence
 
-> S8 Integrated Project — UIR | AI & Big Data Program | 2025–2026
-> Prof. Hakim Hafidi
+> A multi-agent AI system for customer insight and competitive analysis.
+> S8 Integrated Project · UIR · Big Data & AI · 2025–2026
 
-Multi-agent system that analyzes product reviews, scouts competitors, and produces a market intelligence brief. A fine-tuned BERT classifier provides the sentiment analysis backbone, wrapped as a CrewAI tool used by a specialized agent.
+A three-agent system that classifies product reviews with a fine-tuned DistilBERT model,
+scouts competitors via web search, and produces a one-page market brief — with a
+human-in-the-loop checkpoint before publication.
 
-## Why this design
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/aitsassimaroua-dot/uir-product-review-intelligence/blob/main/notebooks/demo.ipynb)
 
-Three agents collaborate, each with a clear responsibility:
+## The team
+
+- **Chaymae Benmakhlouf** · **Maroua Ait Sassi** · **Rania Bouaroua**
+- Supervised by **Prof. Hakim Hafidi**
+
+## Deliverables
+
+| Item | Location |
+|---|---|
+| Demo notebook (Colab-ready) | [`notebooks/demo.ipynb`](notebooks/demo.ipynb) |
+| Written report | [`deliverables/REPORT.pdf`](deliverables/REPORT.pdf) |
+| Defense presentation | [`deliverables/PRESENTATION.pptx`](deliverables/PRESENTATION.pptx) |
+| Demo video | [youtu.be/3ngsXPVdwVw](https://youtu.be/3ngsXPVdwVw) |
+
+## The three agents
 
 | Agent | Role | Tools |
 |---|---|---|
-| **Sentiment Analyst** | Classifies reviews + extracts pain points | `BertSentimentTool` (our DL model), `ReviewLoaderTool` |
-| **Market Researcher** | Scouts competitor reviews + market context | `CompetitorSearchTool` |
-| **Report Orchestrator** | Coordinates, asks human approval, writes brief | (synthesizes outputs of the other two) |
+| **Sentiment Analyst** | Classifies each review, extracts top complaints and praises | `bert_sentiment`, `review_loader` |
+| **Market Researcher** | Uses the analyst's complaints to scout three plausible competitors | `competitor_search` |
+| **Report Orchestrator** | Synthesises a one-page brief, then waits for human approval | _(synthesis only)_ |
 
-A **human-in-the-loop checkpoint** sits before the orchestrator finalizes the market brief: the user reviews/edits the synthesis before export.
+A communication diagram and the full rationale live in [`docs/architecture.md`](docs/architecture.md).
 
-See `docs/architecture.md` for the full rationale, communication diagram, and design trade-offs.
-
-## Tech stack
-
-- **Python** 3.10+
-- **Agent framework**: CrewAI
-- **LLM backend**: Gemini 1.5 Flash (free API) — switchable to Ollama
-- **DL framework**: PyTorch ≥ 2.0 + Hugging Face `transformers`
-- **Dataset**: `amazon_polarity` (subset, see `docs/dataset_choice.md`)
-
-## Setup
-
-### 1. Clone and install
+## Quick start (locally)
 
 ```bash
-git clone <this-repo>
+git clone https://github.com/aitsassimaroua-dot/uir-product-review-intelligence.git
 cd uir-product-review-intelligence
-python -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
+python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
+cp .env.example .env   # then paste a free Gemini key from https://aistudio.google.com/apikey
+python scripts/make_sample_reviews.py    # generate the 10-review demo CSV
 ```
 
-### 2. Get a free Gemini API key
-
-1. Go to https://aistudio.google.com/apikey
-2. Create a key (free tier, no card required)
-3. Copy `.env.example` to `.env` and paste your key:
+### Train the BERT classifier
 
 ```bash
-cp .env.example .env
-# edit .env and set GEMINI_API_KEY=...
+python -m src.model.train                       # full run: 50k examples, 2 epochs (~30 min on MPS)
+python -m src.model.train --epochs 1 --subset 5000   # quick smoke run (~3 min)
+python -m src.model.evaluate                    # writes outputs/eval_metrics.json + confusion matrix
 ```
 
-### 3. Train the BERT model (W2)
+### Run the multi-agent pipeline
 
-```bash
-python -m src.model.train --epochs 2 --subset 50000
-```
-
-This downloads `amazon_polarity`, fine-tunes `distilbert-base-uncased`, saves to `models/sentiment_bert/`, and writes evaluation metrics + confusion matrix to `outputs/`.
-
-### 4. Run the multi-agent system (W3)
-
-**Option A — CLI** (terminal HITL):
+**CLI (terminal HITL):**
 ```bash
 python -m src.main --product "Wireless Earbuds X" --reviews data/processed/sample_reviews.csv
 ```
 
-**Option B — Streamlit UI** (recommended for the demo):
+**Streamlit UI (recommended for the demo):**
 ```bash
 streamlit run streamlit_app.py
-# or: make ui
 ```
-Opens at http://localhost:8501 — upload/paste reviews, run agents, approve/edit/reject the draft via buttons, download the final brief and JSON log.
+Opens at http://localhost:8501 — upload/paste reviews, run agents, approve/edit/reject the draft via buttons.
 
-In both modes the system will:
-1. Load reviews → Sentiment Analyst classifies each one
-2. Market Researcher fetches competitor context
-3. Orchestrator drafts a market brief
-4. **HITL checkpoint**: you review the draft → approve / edit / reject
-5. Final brief written to `outputs/market_brief_<timestamp>.md`
+## Reproducibility
 
-Every agent action is logged as JSON to `logs/agent_actions_<timestamp>.jsonl`.
+- All settings centralised in `src/config.py`, driven by `.env`. No `os.environ` calls elsewhere.
+- Random seed `42` set for `random`, `numpy`, `torch`, and Hugging Face datasets.
+- Every agent action is appended to `logs/agent_actions_<run_id>.jsonl` with input hash, output, and latency.
+- 20 unit tests in `tests/` run in ~11 seconds: `pytest -q`.
 
 ## Project structure
 
 ```
 .
-├── README.md
+├── README.md                  # this file
 ├── requirements.txt
 ├── .env.example
-├── docs/
-│   ├── architecture.md          # Agent design + diagrams + rationale
-│   ├── dataset_choice.md        # Why amazon_polarity, preprocessing
-│   └── timeline.md              # W1–W4 plan
+├── notebooks/
+│   └── demo.ipynb            # Colab-ready end-to-end demo
 ├── src/
-│   ├── config.py                # Centralized settings (env-driven)
-│   ├── utils/logging_config.py  # JSON structured logging
-│   ├── model/                   # BERT: dataset, training, eval, inference
-│   ├── tools/                   # CrewAI tools (sentiment, search, loader)
-│   ├── agents/                  # 3 agents (analyst, researcher, orchestrator)
-│   ├── crew.py                  # Crew assembly + orchestration
-│   └── main.py                  # CLI entry point with HITL
-├── tests/                       # Unit tests (tools, logging, eval)
-├── scripts/                     # Helper scripts (download_data, demo)
-├── data/                        # Raw + processed reviews (gitignored)
-├── models/                      # Trained checkpoints (gitignored)
-├── logs/                        # JSONL action logs (gitignored)
-└── outputs/                     # Generated briefs + figures
+│   ├── config.py             # centralised settings (env-driven)
+│   ├── model/                # DistilBERT: dataset, training, eval, inference
+│   ├── tools/                # CrewAI tools (sentiment, search, loader)
+│   ├── agents/               # 3 agents (analyst, researcher, orchestrator)
+│   ├── crew.py               # crew assembly + orchestration
+│   ├── main.py               # CLI entry point with HITL
+│   └── utils/                # JSONL logging
+├── streamlit_app.py          # browser UI (alternative to CLI)
+├── scripts/
+│   └── make_sample_reviews.py  # generate the 10-review demo CSV
+├── tests/                    # pytest suite
+├── deliverables/             # report (.pdf), slides (.pptx)
+├── docs/                     # architecture, dataset choice, etc.
+├── outputs/                  # eval metrics, generated briefs (gitignored)
+└── logs/                     # JSONL action logs (gitignored)
 ```
 
-## Deliverables checklist
+## Stack
 
-- [x] **W1** — Single-agent prototype, architecture doc, domain + dataset chosen
-- [ ] **W2** — Trained BERT with eval (accuracy, F1, confusion matrix), wrapped as tool
-- [ ] **W3** — 2 specialists + orchestrator, HITL checkpoint, end-to-end demo
-- [ ] **W4** — Guardrails, edge-case tests, 8–12 page report, demo video, slides
+- **Python** 3.10+
+- **Agents** — [CrewAI](https://docs.crewai.com)
+- **LLM** — Gemini 1.5 / 2.0 Flash (free tier) · switchable to Ollama
+- **Deep learning** — PyTorch ≥ 2.0 + Hugging Face `transformers`
+- **Dataset** — `amazon_polarity` (see [`docs/dataset_choice.md`](docs/dataset_choice.md))
+- **UI** — Streamlit
 
-## Evaluation criteria coverage (per brief)
+## Headline numbers
 
-| Criterion | Where it lives |
+| Metric | Value |
 |---|---|
-| Agent roles justified, communication diagram | `docs/architecture.md` |
-| Trained DL model with rigorous evaluation | `src/model/`, `outputs/eval_*.png` |
-| 2+ tools with I/O schemas | `src/tools/` (each tool has Pydantic schemas) |
-| Human-in-the-loop checkpoint | `src/main.py` (CrewAI `human_input=True`) |
-| Error handling, no crashes | `try/except` in every tool, `tests/` |
-| JSON action logs with timestamps | `src/utils/logging_config.py` → `logs/*.jsonl` |
-| Reproducibility | this README + `requirements.txt` + `.env.example` |
-
-## Team
-
-3 students — UIR S8, AI & Big Data Program.
+| Test accuracy (5,000 held-out reviews) | **0.9452** |
+| Weighted F1 | **0.9452** |
+| End-to-end run on 10 reviews | **≈ 90 s** |
+| Unit tests | **20 / 20 pass** |
 
 ## License
 
